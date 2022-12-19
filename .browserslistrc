@@ -2,9 +2,9 @@
 # For additional information regarding the format and rule options, please see:
 # https://github.com/browserslist/browserslist#queries
 #
-Edge >= 16
+Edge > 30
 Firefox >=60
 Chrome > 60
-Safari > 10
-iOS >= 11
+Safari > 14
+iOS > 14
 Opera >= 48
