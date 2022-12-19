@@ -4,11 +4,11 @@
         user-select: none;
 
         &[backward] {
-            left: $arrow_size / 3;
+            left: calc($arrow_size / 3);
         }
 
         &[forward] {
-            right: $arrow_size / 3;
+            right: calc($arrow_size / 3);
         }
 
         & > a {

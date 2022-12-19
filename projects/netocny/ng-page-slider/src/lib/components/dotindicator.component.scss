@@ -11,8 +11,8 @@
 
             width: $dot_size;
             height: $dot_size;
-            border-radius: $dot_size / 2;
-            margin: 0 $dot_size / 3;
+            border-radius: calc($dot_size / 2);
+            margin: 0 calc($dot_size / 3);
 
             opacity: 0.33;
             transition: opacity 200ms linear;

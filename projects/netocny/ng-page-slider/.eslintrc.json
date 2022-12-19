@@ -1,0 +1,26 @@
+{
+    "extends": "../../../.eslintrc.json",
+    "ignorePatterns": [
+        "!**/*"
+    ],
+    "overrides": [
+        {
+            "files": [
+                "*.ts"
+            ],
+            "parserOptions": {
+                "project": [
+                    "projects/netocny/ng-page-slider/tsconfig.(lib|lib.prod|spec).json"
+                ],
+                "createDefaultProgram": true
+            },
+            "rules": {}
+        },
+        {
+            "files": [
+                "*.html"
+            ],
+            "rules": {}
+        }
+    ]
+}

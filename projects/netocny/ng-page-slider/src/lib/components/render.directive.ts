@@ -115,9 +115,9 @@ export class NgPagesRendererDirective<T extends SliderPage> implements OnInit, O
         this.pageWidth = width;
         this.pageHeight = height;
 
-        this.restylePage(StackLocation.Previous);
-        this.restylePage(StackLocation.Current);
-        this.restylePage(StackLocation.Next);
+        this.restylePage(StackLocation.previous);
+        this.restylePage(StackLocation.current);
+        this.restylePage(StackLocation.next);
     }
 
     /**
@@ -128,11 +128,11 @@ export class NgPagesRendererDirective<T extends SliderPage> implements OnInit, O
             return;
         }
         if (this.page > 0) {
-            this.buildPage(this.page - 1, StackLocation.Previous);
+            this.buildPage(this.page - 1, StackLocation.previous);
         }
-        this.buildPage(this.page, StackLocation.Current);
+        this.buildPage(this.page, StackLocation.current);
         if (this.page < this.pageCount - 1) {
-            this.buildPage(this.page + 1, StackLocation.Next);
+            this.buildPage(this.page + 1, StackLocation.next);
         }
     }
 
@@ -225,35 +225,35 @@ export class NgPagesRendererDirective<T extends SliderPage> implements OnInit, O
 
     private goToNextPage() {
         // Remove the previous page from the DOM
-        if (this.views[StackLocation.Previous]) {
-            this.views[StackLocation.Previous]!.destroy();
-            this.views[StackLocation.Previous] = null;
+        if (this.views[StackLocation.previous]) {
+            this.views[StackLocation.previous]!.destroy();
+            this.views[StackLocation.previous] = null;
         }
 
         // Shift the Current and Next pages backwards
-        this.changeStackLocationOfView(StackLocation.Current, StackLocation.Previous);
-        this.changeStackLocationOfView(StackLocation.Next, StackLocation.Current);
+        this.changeStackLocationOfView(StackLocation.current, StackLocation.previous);
+        this.changeStackLocationOfView(StackLocation.next, StackLocation.current);
 
         // Render a new page, if possible
         if (this.page < this.pageCount - 1) {
-            this.buildPage(this.page + 1, StackLocation.Next);
+            this.buildPage(this.page + 1, StackLocation.next);
         }
     }
 
     private goToPreviousPage() {
         // Remove the previous page from the DOM
-        if (this.views[StackLocation.Next]) {
-            this.views[StackLocation.Next]!.destroy();
-            this.views[StackLocation.Next] = null;
+        if (this.views[StackLocation.next]) {
+            this.views[StackLocation.next]!.destroy();
+            this.views[StackLocation.next] = null;
         }
 
         // Shift the Current and Next pages backwards
-        this.changeStackLocationOfView(StackLocation.Current, StackLocation.Next);
-        this.changeStackLocationOfView(StackLocation.Previous, StackLocation.Current);
+        this.changeStackLocationOfView(StackLocation.current, StackLocation.next);
+        this.changeStackLocationOfView(StackLocation.previous, StackLocation.current);
 
         // Render a new page, if possible
         if (this.page > 0) {
-            this.buildPage(this.page - 1, StackLocation.Previous);
+            this.buildPage(this.page - 1, StackLocation.previous);
         }
     }
 }

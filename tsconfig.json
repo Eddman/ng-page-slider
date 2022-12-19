@@ -3,9 +3,9 @@
     "compilerOptions": {
         "baseUrl": "./",
         "outDir": "./projects/out-tsc",
-        "module": "esnext",
+        "module": "es2020",
         "moduleResolution": "node",
-        "target": "es2015",
+        "target": "ES2022",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "types": [
@@ -34,7 +34,8 @@
         "noUnusedLocals": true,
         "alwaysStrict": true,
         "pretty": true,
-        "strict": true
+        "strict": true,
+        "useDefineForClassFields": false
     },
     "exclude": [
         "dist/",

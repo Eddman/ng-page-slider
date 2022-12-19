@@ -13,12 +13,12 @@
     @include ng-dot-indicator($dot_size, $dot_color, $dot_bottom_offset);
     @include ng-slider-nav-button($arrow_size, $arrow_line_height, $arrow_color, $arrow_background);
 
-    $screen_width: $optimal_width + ($page_margin * 2);
+    $screen_width: calc($optimal_width + ($page_margin * 2));
     @media only screen and (max-width: $screen_width) {
-        $arrow_size: $arrow_size / $screen_width * 100 * 1vw;
-        $arrow_line_height: $arrow_line_height / $screen_width * 100 * 1vw;
-        $dot_size: $dot_size / $screen_width * 100 * 1vw;
-        $dot_bottom_offset: $dot_bottom_offset / $screen_width * 100 * 1vw;
+        $arrow_size: calc($arrow_size / $screen_width * 100) * 1vw;
+        $arrow_line_height: calc($arrow_line_height / $screen_width * 100) * 1vw;
+        $dot_size: calc($dot_size / $screen_width * 100) * 1vw;
+        $dot_bottom_offset: calc($dot_bottom_offset / $screen_width * 100) * 1vw;
 
         @include ng-dot-indicator($dot_size, $dot_color, $dot_bottom_offset);
         @include ng-slider-nav-button($arrow_size, $arrow_line_height, $arrow_color, $arrow_background);

@@ -2,12 +2,9 @@
 # For additional information regarding the format and rule options, please see:
 # https://github.com/browserslist/browserslist#queries
 #
-# For IE 9-11 support, please remove 'not' from the last line of the file and adjust as needed
-
-Explorer >= 10
-Edge >= 12
-Firefox >=50
-Chrome >= 50
-Safari >= 7
-iOS >= 7
-Opera >= 40
+Edge >= 16
+Firefox >=60
+Chrome > 60
+Safari > 10
+iOS >= 11
+Opera >= 48

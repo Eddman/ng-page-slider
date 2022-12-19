@@ -16,6 +16,7 @@ Thumbs.db
 browserStackBin/
 
 # Temp files
+/.angular/cache
 .npm/
 /.sass-cache
 /connect.lock

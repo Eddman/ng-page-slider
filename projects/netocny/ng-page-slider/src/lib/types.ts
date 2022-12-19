@@ -4,9 +4,9 @@
 
 // The slider renders 3 pages to DOM at once, as follows
 export enum StackLocation {
-    Previous,
-    Current,
-    Next
+    previous,
+    current,
+    next
 }
 
 // Internal API for event handlers to control the page slider
