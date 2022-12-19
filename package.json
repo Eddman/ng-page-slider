@@ -7,7 +7,7 @@
     },
     "scripts": {
         "ng": "ng",
-        "build": "ng build --configuration production @netocny/ng-page-slider && npm run themes && npm run static",
+        "build": "ng build @netocny/ng-page-slider --configuration production && npm run themes && npm run static",
         "lint": "ng lint",
         "themes": "bundle-scss --config",
         "static": "cp LICENSE README.md .npmignore dist/netocny/ng-page-slider/ && cp .npmrc_publish dist/netocny/ng-page-slider/.npmrc"
