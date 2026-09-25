@@ -1,4 +1,10 @@
-<a (click)="handleClick()"
+<a role="button"
+   [attr.aria-label]="label"
+   [attr.aria-disabled]="disabled()"
+   [attr.tabindex]="disabled() ? -1 : 0"
    [innerHTML]="symbol"
-   [class.disabled]="disabled()">
+   [class.disabled]="disabled()"
+   (click)="handleClick()"
+   (keydown.enter)="handleClick()"
+   (keydown.space)="handleClick()">
 </a>

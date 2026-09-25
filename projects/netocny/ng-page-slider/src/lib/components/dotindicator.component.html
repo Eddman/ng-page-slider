@@ -1,6 +1,12 @@
 @for (active of items(); track $index) {
     <div class="ng-dot-indicator-dot"
+         role="button"
+         [attr.aria-label]="'Go to slide ' + ($index + 1)"
+         [attr.aria-current]="active ? 'true' : null"
+         tabindex="0"
          [class.active]="active"
-         (click)="dotClick.emit($index)">
+         (click)="dotClick.emit($index)"
+         (keydown.enter)="dotClick.emit($index)"
+         (keydown.space)="dotClick.emit($index)">
     </div>
 }

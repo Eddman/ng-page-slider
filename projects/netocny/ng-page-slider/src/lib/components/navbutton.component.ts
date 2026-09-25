@@ -43,6 +43,10 @@ export class NgNavButtonComponent {
         return this.isForward ? '&rsaquo;' : '&lsaquo;';
     }
 
+    public get label() {
+        return this.isForward ? 'Next slide' : 'Previous slide';
+    }
+
     public handleClick() {
         if (this.disabled()) {
             return;
