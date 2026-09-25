@@ -9,12 +9,12 @@
 
 <div class="ng-slider-nav-buttons">
     <ng-slider-nav-button backward
-                          [disabled]="page() === 0"
+                          [disabled]="page() === 0 || animating()"
                           (navigate)="previous(); emitHumanInteraction()">
     </ng-slider-nav-button>
 
     <ng-slider-nav-button forward
-                          [disabled]="page() >= pageCount() - 1"
+                          [disabled]="page() >= pageCount() - 1 || animating()"
                           (navigate)="next(); emitHumanInteraction()">
     </ng-slider-nav-button>
 </div>

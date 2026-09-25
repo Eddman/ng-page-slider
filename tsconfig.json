@@ -2,6 +2,7 @@
     "compileOnSave": false,
     "compilerOptions": {
         "outDir": "./projects/out-tsc",
+        "rootDir": "./projects/netocny/ng-page-slider/src",
         "module": "es2022",
         "moduleResolution": "bundler",
         "target": "ES2022",

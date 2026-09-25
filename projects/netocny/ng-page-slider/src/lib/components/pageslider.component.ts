@@ -49,7 +49,10 @@ export class NgPageSliderComponent {
 
     private readonly interacted = signal(false);
     private scrollFrame = 0;
-    private animating = false;
+    private readonly _animating = signal(false);
+
+    // True while a programmatic scroll animation is running; used to lock navigation.
+    public readonly animating = this._animating.asReadonly();
 
     // Viewport height derived from the first image so aspect ratio is preserved.
     public readonly sliderHeight = signal<number | null>(null);
@@ -117,7 +120,7 @@ export class NgPageSliderComponent {
     }
 
     public onScroll(): void {
-        if (this.scrollFrame || this.animating) {
+        if (this.scrollFrame || this._animating()) {
             return;
         }
         this.scrollFrame = requestAnimationFrame(() => {
@@ -140,6 +143,10 @@ export class NgPageSliderComponent {
     }
 
     public goTo(index: number): void {
+        // Ignore navigation while a scroll animation is in progress to avoid flicker.
+        if (this._animating()) {
+            return;
+        }
         const element = this.track().nativeElement;
         const clamped = Math.max(0, Math.min(index, this.pageCount() - 1));
         this.page.set(clamped);
@@ -173,7 +180,7 @@ export class NgPageSliderComponent {
         }
 
         // Suspend snapping so intermediate frames are not snapped back mid-animation.
-        this.animating = true;
+        this._animating.set(true);
         element.style.scrollSnapType = 'none';
         const start = performance.now();
         const ease = (t: number) => 0.5 - Math.cos(t * Math.PI) / 2;
@@ -184,7 +191,7 @@ export class NgPageSliderComponent {
                 requestAnimationFrame(step);
             } else {
                 element.style.scrollSnapType = '';
-                this.animating = false;
+                this._animating.set(false);
             }
         };
         requestAnimationFrame(step);
