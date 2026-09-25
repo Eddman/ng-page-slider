@@ -1,16 +1,6 @@
 {
     "extends": "../../../tsconfig.lib.json",
-    "compilerOptions": {
-        "paths": {
-            "@netocny/ng-page-slider": [
-                "projects/netocny/ng-page-slider/src/public-api.ts"
-            ]
-        }
-    },
     "angularCompilerOptions": {
-        "skipTemplateCodegen": true,
-        "strictMetadataEmit": true,
-        "fullTemplateTypeCheck": true,
         "strictInjectionParameters": true,
         "enableResourceInlining": true
     }

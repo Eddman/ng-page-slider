@@ -1,11 +1,10 @@
 import {
-    Attribute,
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
-    EventEmitter,
-    Input,
-    Output
+    HostAttributeToken,
+    inject,
+    input,
+    output
 } from '@angular/core';
 
 @Component({
@@ -21,13 +20,12 @@ export class NgNavButtonComponent {
 
     private readonly isForward: boolean;
 
-    private _page: number = 0;
-    private readonly _pageChange = new EventEmitter<number>();
-    private _pageCount: number = 0;
+    public readonly disabled = input(false);
+    public readonly navigate = output<void>();
 
-    public constructor(@Attribute('forward') forward: string,
-                       @Attribute('backward') backward: string,
-                       private readonly changeDetectorRef: ChangeDetectorRef) {
+    public constructor() {
+        const forward = inject(new HostAttributeToken('forward'), {optional: true});
+        const backward = inject(new HostAttributeToken('backward'), {optional: true});
         if (forward != null) {
             if (backward == null) {
                 this.isForward = true;
@@ -41,43 +39,14 @@ export class NgNavButtonComponent {
         }
     }
 
-    @Input()
-    public set pageCount(value: number) {
-        this._pageCount = value;
-    }
-
-    @Output()
-    public get pageChange(): EventEmitter<number> {
-        return this._pageChange;
-    }
-
-    @Input()
-    public set page(value: number) {
-        this._page = value;
-    }
-
-    public get disabled() {
-        if (this.isForward) {
-            return this._page >= this._pageCount - 1;
-        } else {
-            return this._page <= 0;
-        }
-    }
-
     public get symbol() {
         return this.isForward ? '&rsaquo;' : '&lsaquo;';
     }
 
     public handleClick() {
-        if (this.disabled) {
+        if (this.disabled()) {
             return;
         }
-        if (this.isForward) {
-            this._page++;
-        } else {
-            this._page--;
-        }
-        this._pageChange.emit(this._page);
-        this.changeDetectorRef.markForCheck();
+        this.navigate.emit();
     }
 }

@@ -1,26 +1,19 @@
 import {
-    AfterViewChecked,
+    afterNextRender,
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
-    ContentChild,
+    computed,
+    contentChild,
+    DestroyRef,
+    effect,
     ElementRef,
-    EventEmitter,
-    Input,
-    NgZone,
-    OnDestroy,
-    OnInit,
-    Output,
-    QueryList,
-    ViewChild,
-    ViewChildren
+    inject,
+    input,
+    output,
+    signal,
+    viewChild
 } from '@angular/core';
-import {takeUntil} from 'rxjs/operators';
-import {SlideAnimation} from '../functionality/animation';
-import {ArrowKeysHandler} from '../functionality/arrowkeys';
-import {AutoscrollHandler} from '../functionality/autoscroll';
-import {TouchEventHandler} from '../functionality/touchevents';
-import {PageSliderControlAPI, SliderPage} from '../types';
+import {NDotIndicatorComponent} from './dotindicator.component';
 import {NgNavButtonComponent} from './navbutton.component';
 import {NgPagesRendererDirective} from './render.directive';
 
@@ -31,394 +24,169 @@ import {NgPagesRendererDirective} from './render.directive';
         '[class.ng-page-slider]': 'true'
     },
     changeDetection    : ChangeDetectionStrategy.OnPush,
-    preserveWhitespaces: false
+    preserveWhitespaces: false,
+    imports            : [
+        NgNavButtonComponent,
+        NDotIndicatorComponent
+    ]
 })
-export class NgPageSliderComponent implements PageSliderControlAPI, OnInit, AfterViewChecked, OnDestroy {
+export class NgPageSliderComponent {
 
-    @ViewChild('innerContainer', {static: true})
-    private innerContainer: ElementRef | undefined;
+    private readonly destroyRef = inject(DestroyRef);
 
-    private readonly touchEventHandler: TouchEventHandler;
-    private readonly arrowKeysHandler: ArrowKeysHandler;
-    private readonly autoScrollHandler: AutoscrollHandler;
+    public readonly showIndicator = input(true);
+    public readonly transitionDuration = input(250);
+    public readonly autoScrollInterval = input<number | undefined>(undefined);
+    public readonly enableArrowKeys = input(false);
 
-    // Get the page renderer loop and keep its size up to date
-    @ContentChild(NgPagesRendererDirective, {static: true})
-    public renderer: NgPagesRendererDirective<SliderPage> | undefined;
+    public readonly pageChange = output<number>();
 
-    private readonly _pageChange = new EventEmitter<number>();
+    private readonly track = viewChild.required<ElementRef<HTMLElement>>('track');
+    private readonly renderer = contentChild(NgPagesRendererDirective);
 
-    // Dot Indicator
-    @Input()
-    public showIndicator: boolean = true;
-    private _overlayIndicator: boolean = true;
+    public readonly page = signal(0);
+    public readonly pageCount = computed(() => this.renderer()?.pages().length ?? 0);
 
-    // Interactivity
-    private _locked: boolean = false;
-    private _enableOverscroll: boolean = true;
+    private readonly interacted = signal(false);
+    private scrollFrame = 0;
+    private animating = false;
 
-    private readonly destroyed = new EventEmitter<void>();
+    // Viewport height derived from the first image so aspect ratio is preserved.
+    public readonly sliderHeight = signal<number | null>(null);
+    private firstImageWidth = 0;
+    private firstImageHeight = 0;
 
-    private _pageOffset: number = 1;
-
-    private firstImage: HTMLImageElement | undefined;
-
-    @ViewChildren(NgNavButtonComponent, {read: ElementRef})
-    public buttons: QueryList<ElementRef> | undefined;
-
-    public constructor(private readonly element: ElementRef,
-                       private readonly changeDetectorRef: ChangeDetectorRef,
-                       private readonly ngZone: NgZone) {
-        const htmlElement = this.element.nativeElement;
-
-        this.touchEventHandler = new TouchEventHandler(this, htmlElement, ngZone);
-        this.arrowKeysHandler = new ArrowKeysHandler(this, ngZone);
-        this.autoScrollHandler = new AutoscrollHandler(this, this.ngZone);
-    }
-
-    // PUBLIC INTERFACE =====================================================================
-
-    @Input()
-    public set page(pn: number) {
-        if (pn < 0 || pn >= this.pageCount) {
-            return;
-        }
-        if (this.renderer) {
-            if (pn === this.renderer.page) {
+    public constructor() {
+        // Auto-scroll while untouched; restarts whenever inputs/page-count change.
+        effect((onCleanup) => {
+            const interval = this.autoScrollInterval();
+            const count = this.pageCount();
+            if (this.interacted() || interval == null || interval <= 0 || count <= 1) {
                 return;
             }
+            const handle = setInterval(() => {
+                const next = this.page() + 1 >= count ? 0 : this.page() + 1;
+                this.goTo(next);
+            }, interval + this.transitionDuration());
+            onCleanup(() => clearInterval(handle));
+        });
 
-            if (pn === this.renderer.page + 1) {
-                if (this.blockInteraction) {
-                    this._pageChange.emit(this.page);
-                    return;
-                }
-                this.animateToNextPage();
-            } else if (pn === this.renderer.page - 1) {
-                if (this.blockInteraction) {
-                    this._pageChange.emit(this.page);
-                    return;
-                }
-                this.animateToPreviousPage();
-            } else {
-                if (this.blockInteraction) {
-                    this._pageChange.emit(this.page);
-                    return;
-                }
-                this.renderer.page = pn;
-                this._pageChange.emit(pn);
+        // Measure the first image to size the viewport (no upscaling, keeps aspect ratio).
+        effect(() => {
+            const url = this.renderer()?.pages()[0]?.imageURL;
+            if (!url) {
+                this.firstImageWidth = 0;
+                this.firstImageHeight = 0;
+                this.sliderHeight.set(null);
+                return;
             }
-        }
-    }
+            const probe = new Image();
+            probe.onload = () => {
+                this.firstImageWidth = probe.naturalWidth;
+                this.firstImageHeight = probe.naturalHeight;
+                this.applyHeight();
+            };
+            probe.src = url;
+        });
 
-    public get page() {
-        return (this.renderer) ? this.renderer.page : 0;
-    }
-
-    @Output()
-    public get pageChange(): EventEmitter<number> {
-        return this._pageChange;
-    }
-
-    public get pageCount() {
-        return (this.renderer) ? this.renderer.pageCount : 0;
-    }
-
-    // Dot Indicator
-
-    @Input()
-    public set overlayIndicator(value: boolean) {
-        this._overlayIndicator = value;
-    }
-
-    // Interactivity
-    @Input()
-    public set locked(value: boolean) {
-        this._locked = value;
-    }
-
-    @Input()
-    public transitionDuration: number = 250;
-
-    @Input()
-    public set enableOverscroll(value: boolean) {
-        this._enableOverscroll = value;
-    }
-
-    @Input()
-    public set enableArrowKeys(enabled: boolean) {
-        this.arrowKeysHandler.enabled = enabled;
-    }
-
-    @Input()
-    public set autoScrollInterval(value: number | undefined) {
-        this.autoScrollHandler.autoScrollInterval = value;
-    }
-
-    // INTERNAL STATE =======================================================================
-
-    private get pageOffset() {
-        return this._pageOffset;
-    }
-
-    private set pageOffset(v: number) {
-        this._pageOffset = v;
-        if (!this.blockInteraction && this.innerContainer != null) {
-            this.innerContainer.nativeElement.style.left = -this.pageOffset * this.pageWidth + 'px';
-        }
-    }
-
-    // NAV BUTTONS
-
-    public get buttonTop() {
-        if (this.buttons == null || this.buttons.length === 0) {
-            return 0;
-        }
-        return this.pageHeight / 2 - (this.buttons.first.nativeElement.offsetHeight / 2) + 'px';
-    }
-
-    // SIZING
-
-    public get pageWidth() {
-        return this.element.nativeElement.offsetWidth;
-    }
-
-    public get pageHeight() {
-        const chin = (this.showIndicator && !this._overlayIndicator) ? 20 : 0;
-        if (this.firstImage != null) {
-            if (this.firstImage.width > this.element.nativeElement.offsetWidth) {
-                this.element.nativeElement.style.height =
-                    `${((this.firstImage.height * this.element.nativeElement.offsetWidth) / this.firstImage.width)
-                       + chin}px`;
-            } else {
-                this.element.nativeElement.style.height = `${this.firstImage.height + chin}px`;
+        const keyListener = (event: KeyboardEvent) => {
+            if (!this.enableArrowKeys()) {
+                return;
             }
-        }
-        const fullHeight = this.element.nativeElement.offsetHeight;
-        return fullHeight - chin;
-    }
-
-    public get containerWidth() {
-        return this.pageWidth * 3 + 'px';
-    }
-
-    public get containerHeight() {
-        return this.pageHeight + 'px';
-    }
-
-    public get dotBottom() {
-        return (this._overlayIndicator) ? null : '0px';
-    }
-
-    public ngOnInit() {
-        if (!this.renderer) {
-            console.log(`
-				The *ngSliderPages directive is used to render pages efficiently, such that only
-				pages that are visible are in the DOM. Without this directive, the page
-				slider will not display anything.
-			`);
-            throw new Error('No *ngSliderPages directive found inside ng-page-slider');
-        }
-
-        // Resize based on size of the first image (if provided)
-        this.renderer.pagesChange.pipe(
-            takeUntil(this.destroyed)
-        ).subscribe(
-            (pages) => {
-                if (pages.length > 0 && pages[0].imageURL) {
-                    const firstImage = new Image();
-                    this.firstImage = undefined;
-                    firstImage.onload = () => {
-                        this.firstImage = firstImage;
-                        this.resize();
-                    };
-                    firstImage.src = pages[0].imageURL;
-                }
+            if (event.key === 'ArrowLeft') {
+                this.previous();
+                this.emitHumanInteraction();
+            } else if (event.key === 'ArrowRight') {
+                this.next();
+                this.emitHumanInteraction();
             }
-        );
+        };
+        document.addEventListener('keydown', keyListener);
+        this.destroyRef.onDestroy(() => document.removeEventListener('keydown', keyListener));
 
-        this.resize();
-        this.ngZone.runOutsideAngular(() => {
-            window.addEventListener('resize', this.resizeListener);
+        // Keep the current page aligned when the viewport is resized.
+        afterNextRender(() => {
+            const element = this.track().nativeElement;
+            const observer = new ResizeObserver(() => {
+                this.applyHeight();
+                element.scrollLeft = this.page() * element.clientWidth;
+            });
+            observer.observe(element);
+            this.destroyRef.onDestroy(() => observer.disconnect());
         });
     }
 
-    public ngAfterViewChecked() {
-        //  console.log('Change detection triggered!');
-    }
-
-    public ngOnDestroy(): void {
-        this.touchEventHandler.destroy();
-        this.arrowKeysHandler.destroy();
-        this.autoScrollHandler.destroy();
-
-        this.ngZone.runOutsideAngular(() => {
-            window.removeEventListener('resize', this.resizeListener);
-        });
-
-        // Unsubscribe others
-        this.destroyed.emit();
-        this.destroyed.complete();
-    }
-
-    private readonly resizeListener = () => this.ngZone.run(() => this.resize());
-
-    private resize() {
-        if (this.innerContainer != null) {
-            this.innerContainer.nativeElement.style.left = -this.pageWidth + 'px';
-        }
-        if (this.renderer != null) {
-            this.renderer.resize(this.pageWidth, this.pageHeight);
-        }
-        this.changeDetectorRef.markForCheck();
-    }
-
-    /**
-     * Called anytime user interacts with the slider to disable the autoscroll.
-     */
-    public emitHumanInteraction(): void {
-        this.autoScrollHandler.enabled = false;
-    }
-
-    // INTERACTIVE NAVIGATION ===============================================================
-
-    private blockInteraction: boolean = false;
-
-    public scrollTo(x: number) {
-        if (this._locked || this.blockInteraction) {
+    public onScroll(): void {
+        if (this.scrollFrame || this.animating) {
             return;
         }
-        this.pageOffset = this.clampX(x);
-    }
-
-    public animateToNextPage(momentum: number = 0): SlideAnimation | null {
-        if (this._locked || this.blockInteraction) {
-            return null;
-        }
-
-        let animation: SlideAnimation | null;
-
-        if (this.renderer != null && this.page === this.renderer.pageCount - 1) {
-            animation = this.animateToX(1, 0);
-            if (animation != null) {
-                animation.completed.pipe(
-                    takeUntil(this.destroyed)
-                ).subscribe(() => {
-                    this.pageOffset = 1;
-                    this.changeDetectorRef.markForCheck();
-                });
+        this.scrollFrame = requestAnimationFrame(() => {
+            this.scrollFrame = 0;
+            const element = this.track().nativeElement;
+            const index = Math.round(element.scrollLeft / element.clientWidth);
+            if (index !== this.page()) {
+                this.page.set(index);
+                this.pageChange.emit(index);
             }
-            return animation;
-        }
-
-        animation = this.animateToX(2, momentum);
-        if (animation != null) {
-            animation.completed.pipe(
-                takeUntil(this.destroyed)
-            ).subscribe(() => {
-                if (this.renderer != null) {
-                    this.renderer.page++;
-                    this._pageChange.emit(this.renderer.page);
-                    this.pageOffset = 1;
-                    this.changeDetectorRef.markForCheck();
-                }
-            });
-        }
-        return animation;
-    }
-
-    public animateToPreviousPage(momentum: number = 0): SlideAnimation | null {
-        if (this._locked || this.blockInteraction) {
-            return null;
-        }
-
-        let animation: SlideAnimation | null;
-
-        if (this.page === 0) {
-            animation = this.animateToX(1, 0);
-            if (animation != null) {
-                animation.completed.pipe(
-                    takeUntil(this.destroyed)
-                ).subscribe(() => {
-                    this.pageOffset = 1;
-                    this.changeDetectorRef.markForCheck();
-                });
-            }
-            return animation;
-        }
-
-        animation = this.animateToX(0, momentum);
-        if (animation != null) {
-            animation.completed.pipe(
-                takeUntil(this.destroyed)
-            ).subscribe(() => {
-                if (this.renderer != null) {
-                    this.renderer.page--;
-                    this._pageChange.emit(this.renderer.page);
-                    this.pageOffset = 1;
-                    this.changeDetectorRef.markForCheck();
-                }
-            });
-        }
-        return animation;
-    }
-
-    public animateToX(x: number, momentum: number): SlideAnimation | null {
-        if (this._locked || this.blockInteraction) {
-            return null;
-        }
-        this.blockInteraction = true;
-
-        const w = this.pageWidth;
-        const animation = new SlideAnimation(
-            this.innerContainer!.nativeElement,	 	// Element to animate
-            -this.pageOffset * w,		// Current position (px)
-            -x * w,	 					// Destination position (px)
-            momentum * w,			 	// User scroll momentum (px/s)
-            this.transitionDuration,		// Default duration, when momentum = 0
-            this.ngZone
-        );
-        animation.completed.pipe(
-            takeUntil(this.destroyed)
-        ).subscribe(() => {
-            this.blockInteraction = false;
-            this.changeDetectorRef.markForCheck();
         });
-        return animation;
     }
 
-    // OVERSCROLL (iOS STYLE) ===============================================================
-
-    // Get X to a reasonable range, taking into account page boundaries
-    private clampX(x: number) {
-        let clampX = x;
-        if (clampX < 0) {
-            clampX = 0;
-        }
-        if (clampX > 2) {
-            clampX = 2;
-        }
-
-        // Allow some overscrolling on the first and last page
-        if (this.page === 0 && clampX < 1) {
-            if (this._enableOverscroll) {
-                clampX = 1 - NgPageSliderComponent.overscrollRamp(1 - clampX);
-            } else {
-                clampX = 1;
-            }
-        }
-        if (this.renderer != null && this.page === this.renderer.pageCount - 1 && clampX > 1) {
-            if (this._enableOverscroll) {
-                clampX = 1 + NgPageSliderComponent.overscrollRamp(clampX - 1);
-            } else {
-                clampX = 1;
-            }
-        }
-        return clampX;
+    public next(): void {
+        this.goTo(this.page() + 1);
     }
 
-    // Exponential ramp to simulate elastic pressure on overscrolling
-    private static overscrollRamp(input: number): number {
-        return Math.pow(input, 0.5) / 5;
+    public previous(): void {
+        this.goTo(this.page() - 1);
+    }
+
+    public goTo(index: number): void {
+        const element = this.track().nativeElement;
+        const clamped = Math.max(0, Math.min(index, this.pageCount() - 1));
+        this.page.set(clamped);
+        this.pageChange.emit(clamped);
+        this.smoothScrollTo(element, clamped * element.clientWidth, this.transitionDuration());
+    }
+
+    // Disables auto-scroll on the first genuine user interaction.
+    public emitHumanInteraction(): void {
+        this.interacted.set(true);
+    }
+
+    // Sizes the viewport to the first image, scaling down only if it is wider than the track.
+    private applyHeight(): void {
+        if (this.firstImageWidth <= 0 || this.firstImageHeight <= 0) {
+            return;
+        }
+        const width = this.track().nativeElement.clientWidth;
+        const height = this.firstImageWidth > width
+            ? Math.round((this.firstImageHeight * width) / this.firstImageWidth)
+            : this.firstImageHeight;
+        this.sliderHeight.set(height);
+    }
+
+    private smoothScrollTo(element: HTMLElement, target: number, duration: number): void {
+        const from = element.scrollLeft;
+        const distance = target - from;
+        if (duration <= 0 || Math.abs(distance) < 1) {
+            element.scrollLeft = target;
+            return;
+        }
+
+        // Suspend snapping so intermediate frames are not snapped back mid-animation.
+        this.animating = true;
+        element.style.scrollSnapType = 'none';
+        const start = performance.now();
+        const ease = (t: number) => 0.5 - Math.cos(t * Math.PI) / 2;
+        const step = (now: number) => {
+            const t = Math.min(1, (now - start) / duration);
+            element.scrollLeft = from + distance * ease(t);
+            if (t < 1) {
+                requestAnimationFrame(step);
+            } else {
+                element.style.scrollSnapType = '';
+                this.animating = false;
+            }
+        };
+        requestAnimationFrame(step);
     }
 }

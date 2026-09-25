@@ -10,7 +10,7 @@
             "prefix": "lib",
             "architect": {
                 "build": {
-                    "builder": "@angular-devkit/build-angular:ng-packagr",
+                    "builder": "@angular/build:ng-packagr",
                     "options": {
                         "tsConfig": "projects/netocny/ng-page-slider/tsconfig.lib.json",
                         "project": "projects/netocny/ng-page-slider/ng-package.json"
@@ -36,7 +36,7 @@
     "cli": {
         "analytics": false,
         "schematicCollections": [
-            "@angular-eslint/schematics"
+            "angular-eslint"
         ]
     }
 }

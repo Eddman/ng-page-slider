@@ -1,4 +1,6 @@
-<div *ngFor="let item of items"
-     class="ng-dot-indicator-dot"
-     [class.active]="item.active">
-</div>
+@for (active of items(); track $index) {
+    <div class="ng-dot-indicator-dot"
+         [class.active]="active"
+         (click)="dotClick.emit($index)">
+    </div>
+}

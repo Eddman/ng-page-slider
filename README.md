@@ -4,10 +4,10 @@
 ---
 
 **Mimicks the functionality of UIPageViewController in pure HTML for mobile web apps, using
-DOM recycling and CSS3 transitions for near-native performance. Built with Angular 9, and
-designed to work seamlessly in normal NG2 templates.**
+native CSS scroll-snap for smooth, near-native performance. Fully standalone and signal-based,
+zoneless-ready.**
 
-*Designed for Angular 15.0.0+*
+*Designed for Angular 20.0.0+*
 
 ### Live Demo
 
@@ -24,32 +24,36 @@ npm install --save @netocny/ng-page-slider
 ### Typescript
 
 ```typescript
-import {Component, NgModule} from '@angular/core';
-import {NgPageSliderModule} from '@netocny/ng-page-slider';
-import {of} from 'rxjs';
+import {Component} from '@angular/core';
+import {NgPageSliderComponent, NgPagesRendererDirective} from '@netocny/ng-page-slider';
 
 @Component({
     selector: 'example-component',
+    imports : [
+        NgPageSliderComponent,
+        NgPagesRendererDirective
+    ],
     template: `
 		<ng-page-slider
-                *ngIf="pages | async as loadedPages"
                 [enableArrowKeys]="keysEnabled"
-                [transitionDuration]="loadedPages.duration"
-                [autoScrollInterval]="loadedPages.autoSlide">
+                [transitionDuration]="pages.duration"
+                [autoScrollInterval]="pages.autoSlide">
             <!-- Pages -->
-            <div *ngSliderPages="let page of loadedPages.images" 
+            <div *ngSliderPages="let page of pages.images"
                     class="page">
-                <img [src]="page.imageURL">
+                <img [src]="page.imageURL" [alt]="page.title">
                 <span class="title">{{page.title}}</span>
             </div>
         </ng-page-slider>
 	`,
     styles  : [
         `.page {
-            overflow: hidden;   
+            position: relative;
+            overflow: hidden;
         }`,
         `img {
             height: 100%;
+            width: auto;
             margin: auto;
             display: block;
         }`,
@@ -58,37 +62,26 @@ import {of} from 'rxjs';
             color: white;
             position: absolute;
             bottom: 15px;
-            left: 50%;
+            left: 15px;
         }`
     ]
 })
 export class ExampleComponent {
-    public keysEnabled: boolean = true;
-    public pages = of({
+    public keysEnabled = true;
+    public pages = {
         duration : 700,
         autoSlide: 2000,
         images   : [
             {
-                title   : "Page 1",
+                title   : 'Page 1',
                 imageURL: 'some/image.png'
             },
             {
-                title   : "Page 2",
+                title   : 'Page 2',
                 imageURL: 'some/other_image.png'
             }
         ]
-    });
-}
-
-@NgModule({
-    imports     : [
-        NgPageSliderModule
-    ],
-    declarations: [
-        ExampleComponent
-    ]
-})
-export class ExampleModule {
+    };
 }
 ```
 
@@ -97,17 +90,17 @@ export class ExampleModule {
 And in `styles.scss` include:
 
 ```scss
-@import "~@netocny/ng-page-slider/ng-page-slider";
+@use "@netocny/ng-page-slider/ng-page-slider" as slider;
 
-// Below this thershold the relative CSS units will be used and 
+// Below this thershold the relative CSS units will be used and
 // parts of the component became smaller (responsive design)
 $minimal_page_width: 900px;
 $page_margin: 15px;
 
-@include ng-page-slider($minimal_page_width, $page_margin);
+@include slider.ng-page-slider($minimal_page_width, $page_margin);
 
 // All options and defaults
-@include ng-page-slider(
+@include slider.ng-page-slider(
         $optimal_width, $page_margin,
     $arrow_size: 44px,
     $arrow_line_height: 37px,

@@ -1,29 +1,27 @@
-<!-- Display the actual pages -->
-<div class="inner"
-     #innerContainer
-     [style.width]="containerWidth"
-     [style.height]="containerHeight">
+<!-- Native scroll-snap track; the projected *ngSliderPages are its snap children -->
+<div #track
+     class="track"
+     [style.height.px]="sliderHeight()"
+     (scroll)="onScroll()"
+     (pointerdown)="emitHumanInteraction()">
     <ng-content></ng-content>
 </div>
 
-<div class="ng-slider-nav-buttons" [style.top]="buttonTop">
-    <!-- Navigation Buttons -->
+<div class="ng-slider-nav-buttons">
     <ng-slider-nav-button backward
-                          [(page)]="page"
-                          [pageCount]="pageCount"
-                          (pageChange)="emitHumanInteraction()">
+                          [disabled]="page() === 0"
+                          (navigate)="previous(); emitHumanInteraction()">
     </ng-slider-nav-button>
 
     <ng-slider-nav-button forward
-                          [(page)]="page"
-                          [pageCount]="pageCount"
-                          (pageChange)="emitHumanInteraction()">
+                          [disabled]="page() >= pageCount() - 1"
+                          (navigate)="next(); emitHumanInteraction()">
     </ng-slider-nav-button>
 </div>
 
-<!-- Display the page indicator -->
-<ng-dot-indicator *ngIf="showIndicator"
-                  [page]="page"
-                  [pageCount]="pageCount"
-                  [style.bottom]="dotBottom">
-</ng-dot-indicator>
+@if (showIndicator()) {
+    <ng-dot-indicator [page]="page()"
+                      [pageCount]="pageCount()"
+                      (dotClick)="goTo($event); emitHumanInteraction()">
+    </ng-dot-indicator>
+}

@@ -2,11 +2,6 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "outDir": "./dist/out-tsc/lib",
-        "paths": {
-            "@netocny/ng-page-slider": [
-                "dist/netocny/ng-page-slider"
-            ]
-        },
         "declaration": true,
         "inlineSources": true,
         "importHelpers": true

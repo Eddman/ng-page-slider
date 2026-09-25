@@ -1,28 +1,16 @@
 {
     "compileOnSave": false,
     "compilerOptions": {
-        "baseUrl": "./",
         "outDir": "./projects/out-tsc",
-        "module": "es2020",
-        "moduleResolution": "node",
+        "module": "es2022",
+        "moduleResolution": "bundler",
         "target": "ES2022",
-        "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "types": [
-            "jasmine"
-        ],
-        "typeRoots": [
-            "node_modules/@types"
-        ],
+        "types": [],
         "lib": [
-            "es2018",
+            "ES2023",
             "dom"
         ],
-        "paths": {
-            "@netocny/ng-page-slider": [
-                "projects/netocny/ng-page-slider/src/public-api.ts"
-            ]
-        },
         "sourceMap": true,
         "declaration": false,
         "skipLibCheck": true,
@@ -34,8 +22,14 @@
         "noUnusedLocals": true,
         "alwaysStrict": true,
         "pretty": true,
-        "strict": true,
-        "useDefineForClassFields": false
+        "strict": true
+    },
+    "angularCompilerOptions": {
+        "enableI18nLegacyMessageIdFormat": false,
+        "strictInjectionParameters": true,
+        "strictInputAccessModifiers": true,
+        "typeCheckHostBindings": true,
+        "strictTemplates": true
     },
     "exclude": [
         "dist/",
