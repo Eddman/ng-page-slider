@@ -10,11 +10,9 @@ import {
     inject,
     input,
     output,
-    PLATFORM_ID,
     signal,
     viewChild
 } from '@angular/core';
-import {isPlatformBrowser} from '@angular/common';
 import {NDotIndicatorComponent} from './dotindicator.component';
 import {NgNavButtonComponent} from './navbutton.component';
 import {NgPagesRendererDirective} from './render.directive';
@@ -35,7 +33,6 @@ import {NgPagesRendererDirective} from './render.directive';
 export class NgPageSliderComponent {
 
     private readonly destroyRef = inject(DestroyRef);
-    private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
     public readonly showIndicator = input(true);
     public readonly transitionDuration = input(250);
@@ -64,7 +61,7 @@ export class NgPageSliderComponent {
         effect((onCleanup) => {
             const interval = this.autoScrollInterval();
             const count = this.pageCount();
-            if (!this.isBrowser || this.interacted() || interval == null || interval <= 0 || count <= 1) {
+            if (this.interacted() || interval == null || interval <= 0 || count <= 1) {
                 return;
             }
             const handle = setInterval(() => {
@@ -77,7 +74,7 @@ export class NgPageSliderComponent {
         // Measure the first image to size the viewport (no upscaling, keeps aspect ratio).
         effect(() => {
             const url = this.renderer()?.pages()[0]?.imageURL;
-            if (!this.isBrowser || !url) {
+            if (!url) {
                 this.firstImageWidth = 0;
                 this.firstImageHeight = 0;
                 this.sliderHeight.set(null);
@@ -92,24 +89,23 @@ export class NgPageSliderComponent {
             probe.src = url;
         });
 
-        // Keep the current page aligned when the viewport is resized, and wire keyboard nav.
-        // afterNextRender only runs in the browser, so DOM globals are safe here.
-        afterNextRender(() => {
-            const keyListener = (event: KeyboardEvent) => {
-                if (!this.enableArrowKeys()) {
-                    return;
-                }
-                if (event.key === 'ArrowLeft') {
-                    this.previous();
-                    this.emitHumanInteraction();
-                } else if (event.key === 'ArrowRight') {
-                    this.next();
-                    this.emitHumanInteraction();
-                }
-            };
-            document.addEventListener('keydown', keyListener);
-            this.destroyRef.onDestroy(() => document.removeEventListener('keydown', keyListener));
+        const keyListener = (event: KeyboardEvent) => {
+            if (!this.enableArrowKeys()) {
+                return;
+            }
+            if (event.key === 'ArrowLeft') {
+                this.previous();
+                this.emitHumanInteraction();
+            } else if (event.key === 'ArrowRight') {
+                this.next();
+                this.emitHumanInteraction();
+            }
+        };
+        document.addEventListener('keydown', keyListener);
+        this.destroyRef.onDestroy(() => document.removeEventListener('keydown', keyListener));
 
+        // Keep the current page aligned when the viewport is resized.
+        afterNextRender(() => {
             const element = this.track().nativeElement;
             const observer = new ResizeObserver(() => {
                 this.applyHeight();
