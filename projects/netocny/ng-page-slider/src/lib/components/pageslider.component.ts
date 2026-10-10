@@ -115,7 +115,17 @@ export class NgPageSliderComponent {
                 element.scrollLeft = this.page() * element.clientWidth;
             });
             observer.observe(element);
-            this.destroyRef.onDestroy(() => observer.disconnect());
+            // Horizontal trackpad/wheel swipes scroll the track without a pointerdown.
+            const wheelListener = (event: WheelEvent) => {
+                if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+                    this.emitHumanInteraction();
+                }
+            };
+            element.addEventListener('wheel', wheelListener, {passive: true});
+            this.destroyRef.onDestroy(() => {
+                observer.disconnect();
+                element.removeEventListener('wheel', wheelListener);
+            });
         });
     }
 
@@ -126,6 +136,15 @@ export class NgPageSliderComponent {
         this.scrollFrame = requestAnimationFrame(() => {
             this.scrollFrame = 0;
             const element = this.track().nativeElement;
+            if (!element.clientWidth) {
+                return;
+            }
+            // Before any user input, scrolling comes from the browser re-snapping while pages/images lay out
+            // (seen on mobile Safari), which would land on an arbitrary page: put the current page back.
+            if (!this.interacted()) {
+                element.scrollLeft = this.page() * element.clientWidth;
+                return;
+            }
             const index = Math.round(element.scrollLeft / element.clientWidth);
             if (index !== this.page()) {
                 this.page.set(index);
