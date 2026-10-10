@@ -4,7 +4,7 @@
     "license": "SEE LICENSE IN LICENSE",
     "repository": {
         "type": "git",
-        "url": "https://github.com/Eddman/ng-page-slider"
+        "url": "git+https://github.com/Eddman/ng-page-slider.git"
     },
     "readmeFilename": "README.md",
     "dependencies": {
