@@ -1,4 +1,4 @@
-@mixin ng-dot-indicator($dot_size, $dot_color, $dots_offset) {
+@mixin ng-dot-indicator($dot_size, $dot_color, $dots_offset, $dot_adaptive: true) {
     .ng-dot-indicator {
         display: flex;
         flex-direction: row;
@@ -19,6 +19,23 @@
 
             &.active {
                 opacity: 1.0;
+            }
+
+            @if $dot_adaptive {
+                // Thresholds the blurred backdrop under each dot: gray on light, white on dark.
+                // brightness(1.28) moves the threshold to ~61 % lightness, where both variants contrast equally.
+                $adaptive_filter: grayscale(1) blur(3px) invert(1) brightness(1.28) contrast(100) contrast(0.5) brightness(1.334);
+
+                @supports (backdrop-filter: invert(1)) or (-webkit-backdrop-filter: invert(1)) {
+                    background-color: transparent;
+                    -webkit-backdrop-filter: $adaptive_filter;
+                    backdrop-filter: $adaptive_filter;
+                    opacity: 0.5;
+
+                    &.active {
+                        opacity: 1.0;
+                    }
+                }
             }
         }
     }

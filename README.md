@@ -106,7 +106,10 @@ $page_margin: 15px;
     $arrow_line_height: 37px,
     $arrow_color: white, $arrow_background: rgba(125, 125, 125, 0.4),
     $dot_size: 6px, $dot_bottom_offset: 9px,
-    $dot_color: white
+    $dot_color: white,
+    // Adapts dots to the image underneath (gray on light, white on dark);
+    // falls back to $dot_color where backdrop-filter is unsupported
+    $dot_adaptive: true
 )
 ```
 
