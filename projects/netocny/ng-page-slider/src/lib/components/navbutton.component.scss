@@ -1,4 +1,4 @@
-@mixin ng-slider-nav-button($arrow_size, $arrow_line_height, $arrow_color, $arrow_background) {
+@mixin ng-slider-nav-button($arrow_size, $arrow_line_height, $arrow_color, $arrow_background, $arrow_adaptive: true) {
     .ng-slider-nav-button {
         cursor: pointer;
         user-select: none;
@@ -34,6 +34,28 @@
 
             &.disabled {
                 opacity: 0.33;
+            }
+
+            @if $arrow_adaptive {
+                // Darkens the blurred backdrop so the arrow stays legible: gray circle on light,
+                // slightly lighter circle on dark (thanks to the white veil)
+                @supports (backdrop-filter: brightness(1)) or (-webkit-backdrop-filter: brightness(1)) {
+                    background-color: rgba(255, 255, 255, 0.12);
+                    -webkit-backdrop-filter: blur(6px) brightness(0.55);
+                    backdrop-filter: blur(6px) brightness(0.55);
+
+                    &:hover {
+                        background-color: rgba(255, 255, 255, 0.12);
+                        -webkit-backdrop-filter: blur(6px) brightness(0.45);
+                        backdrop-filter: blur(6px) brightness(0.45);
+                    }
+
+                    &:active {
+                        background-color: rgba(255, 255, 255, 0.12);
+                        -webkit-backdrop-filter: blur(6px) brightness(0.35);
+                        backdrop-filter: blur(6px) brightness(0.35);
+                    }
+                }
             }
         }
     }

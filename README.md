@@ -109,7 +109,10 @@ $page_margin: 15px;
     $dot_color: white,
     // Adapts dots to the image underneath (gray on light, white on dark);
     // falls back to $dot_color where backdrop-filter is unsupported
-    $dot_adaptive: true
+    $dot_adaptive: true,
+    // Darkens the image under the arrow buttons so the arrows stay legible on any background;
+    // falls back to $arrow_background where backdrop-filter is unsupported
+    $arrow_adaptive: true
 )
 ```
 

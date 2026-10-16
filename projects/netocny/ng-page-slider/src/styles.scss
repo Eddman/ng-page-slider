@@ -9,10 +9,11 @@
     $arrow_color: white, $arrow_background: rgba(125, 125, 125, 0.4),
     $dot_size: 6px, $dot_bottom_offset: 9px,
     $dot_color: white,
-    $dot_adaptive: true
+    $dot_adaptive: true,
+    $arrow_adaptive: true
 ) {
     @include ng-dot-indicator($dot_size, $dot_color, $dot_bottom_offset, $dot_adaptive);
-    @include ng-slider-nav-button($arrow_size, $arrow_line_height, $arrow_color, $arrow_background);
+    @include ng-slider-nav-button($arrow_size, $arrow_line_height, $arrow_color, $arrow_background, $arrow_adaptive);
 
     $screen_width: calc($optimal_width + ($page_margin * 2));
     @media only screen and (max-width: $screen_width) {
@@ -22,7 +23,7 @@
         $dot_bottom_offset: calc($dot_bottom_offset / $screen_width * 100) * 1vw;
 
         @include ng-dot-indicator($dot_size, $dot_color, $dot_bottom_offset, $dot_adaptive);
-        @include ng-slider-nav-button($arrow_size, $arrow_line_height, $arrow_color, $arrow_background);
+        @include ng-slider-nav-button($arrow_size, $arrow_line_height, $arrow_color, $arrow_background, $arrow_adaptive);
     }
 
     @include ng-page-slider-component();
